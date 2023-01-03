@@ -1,3 +1,5 @@
 function testvscode(){
-    Looger.log("Hello VS Code")
+    Loger.log("Hello VS Code")
 }
+
+//LibraryGHAtest.colorCountryTab();
