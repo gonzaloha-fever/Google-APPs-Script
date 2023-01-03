@@ -1,6 +1,14 @@
 {
   "timeZone": "America/New_York",
   "dependencies": {
+    "libraries": [
+      {
+        "userSymbol": "LibraryGHAtest",
+        "version": "0",
+        "libraryId": "1kFxYQTQo_sbcxw07qGP5vOyEg0GyHCej7Wotf8TIlhyiV-AveJruO7E_",
+        "developmentMode": true
+      }
+    ]
   },
   "exceptionLogging": "STACKDRIVER",
   "runtimeVersion": "V8"
