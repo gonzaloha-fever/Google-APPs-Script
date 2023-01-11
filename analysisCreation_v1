@@ -1,0 +1,183 @@
+
+function analysisSpreadsheetsCreation() {
+
+    /*
+    Code by María Martinez Milla
+
+    Last Update 11/01/2023
+
+
+
+    Future Work: ?
+    */
+
+    //Pq aquí usamos active spreadsheet?
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+    const inputsSheet = ss.getSheetByName("New Analysis [Inputs]");
+    const projectName = inputsSheet.getRange("F4").getValue();
+    const docTracker = ss.getSheetByName("Analysis [TRACKER]");
+    const lastRow = docTracker.getLastRow();
+
+    const projectsTracker = toFlatArray(docTracker.getRange(1, 5, lastRow + 1, 1).getValues());
+
+    if (projectsTracker.includes(projectName)) {
+
+        Browser.msgBox('Analysis already done for this opportunity!')
+    }
+
+    else {
+
+        //Creates a copy from the document here: '1BCHXnrM80D772nsI7yF90Ixct2A4sMx2FxYLmibJDxk' habría que convertir en variable
+        //Se podría añadir la dirección para que fuese menos lío.
+        const idAnalysisSpreadsheetCreated = DriveApp.getFileById("1BCHXnrM80D772nsI7yF90Ixct2A4sMx2FxYLmibJDxk").makeCopy("Doc in creation - DO NOT OPEN").getId();
+        const analysisSpreadsheetCreated = SpreadsheetApp.getFileById(idAnalysisSpreadsheetCreated);
+
+        //set sharing permissions of the document to all Fever staff
+        DriveApp.getFileById(idAnalysisSpreadsheetCreated).setSharing(DriveApp.Access.DOMAIN_WITH_LINK, DriveApp.Permission.EDIT);
+
+        //Notification of creation of the new sheet
+        inputsSheet.getRange("G12").setValue("Creating Sheet - Please Wait");
+
+        // Get input data
+        const country = inputsSheet.getRange("C4").getValue();
+        const cityName = inputsSheet.getRange("C5").getValue();
+        const cityCode = inputsSheet.getRange("C6").getValue();
+        const salesOwner = inputsSheet.getRange("F5").getValue();
+        const oppIDs = inputsSheet.getRange("H5").getValue();
+        const ddID = inputsSheet.getRange("H6").getValue();
+        const ddURLInput = inputsSheet.getRange("H7").getValue();
+        const growthOwner = inputsSheet.getRange("F6").getValue();
+        const cpmtoSell = inputsSheet.getRange("A4").getValue();
+        const cpmToSpend = inputsSheet.getRange("A5").getValue();
+        const gatewayCurrency = inputsSheet.getRange("A6").getValue();
+        const storeCodeNumber = inputsSheet.getRange("A3").getValue();
+        const anID = "an_" + storeCodeNumber;
+        const dateAn = new Date();
+
+        //Renaming document
+        const analysisSheetCreated = analysisSpreadsheetCreated.getSheetByName("Pruebas Analisis NEW");
+        const analysisSpreadsheetName = "[" + projectName + "] - [" + anID + "] - [" + cityCode + "] - [" + salesOwner + "]";
+        analysisSpreadsheetCreated.rename(analysisSpreadsheetName);
+        analysisSheetCreated.rename("Analysis Growth");
+        const analysisSheetCreatedURL = analysisSheetCreated.getUrl();
+
+        //put the input data in the created analysis doc
+        analysisSheetCreated.getRange("I4").setValue(growthOwner);
+        analysisSheetCreated.getRange("I3").setValue(salesOwner);
+        analysisSheetCreated.getRange("L9").setValue(ddID);
+        analysisSheetCreated.getRange("L10").setValue(ddURLInput);
+        analysisSheetCreated.getRange("B3").setValue(oppIDs);
+        analysisSheetCreated.getRange("B4").setValue(anID);
+        analysisSheetCreated.getRange("B5").setValue(dateAn);
+        analysisSheetCreated.getRange("E3").setValue(projectName);
+        analysisSheetCreated.getRange("E5").setValue(country);
+        analysisSheetCreated.getRange("E6").setValue(cityName);
+        analysisSheetCreated.getRange("AD36").setValue(cpmtoSell);
+        analysisSheetCreated.getRange("AE36").setValue(cpmToSpend);
+        analysisSheetCreated.getRange("Q15").setValue(gatewayCurrency);
+
+        //clear the inputs cells  
+        inputsSheet.getRange("F4").setValue("");
+        inputsSheet.getRange("C4").setValue("Select a country");
+        inputsSheet.getRange("C5").setValue("Select a city");
+        inputsSheet.getRange("F5").setValue("");
+        inputsSheet.getRange("F6").setValue("");
+        inputsSheet.getRange("A3").setValue(storeCodeNumber + 1);
+
+        //put the URL in the Inputs tab 
+        inputsSheet.getRange("G12").setValue(analysisSpreadsheetCreated.getUrl());
+
+        //fill the Doc tracker
+        const dataFillTrackerAnalysisDoc = [
+            { column: 1, value: anID },
+            { column: 2, value: dateAn },
+            { column: 3, value: country },
+            { column: 4, value: cityName },
+            { column: 5, value: projectName },
+            { column: 8, formula: `=if(F` + lastRow+1 + `="","Pending",if(G` + lastRow+1 + `="Pending","Pending",(F` + lastRow+1 + `/G` + lastRow+1 + `)-1))` },
+            { column: 12, formula: `=if(I` + lastRow+1 + `="","",iferror(if($AH` + lastRow+1 + `="usd",I` + lastRow+1 + `*0.001,I` + lastRow+1 + `*0.001*googlefinance("currency:"&$AH` + lastRow+1 + `&"USD")),""))` },
+            { column: 13, formula: `=if(J` + lastRow+1 + `="","",iferror(if($AH` + lastRow+1 + `="usd",J` + lastRow+1 + `*0.001,J` + lastRow+1 + `*0.001*googlefinance("currency:"&$AH` + lastRow+1 + `&"USD")),""))`},
+            { column: 14, formula: `=if(K` + lastRow+1 + `="","",iferror(if($AH` + lastRow+1 + `="usd",K` + lastRow+1 + `*0.001,0.001*K` + lastRow+1 + `*googlefinance("currency:"&$AH` + lastRow+1 + `&"USD")),""))`},
+            { column: 17, formula: `=if(Ai` + lastRow+1 + `="","",iferror(if($AH` + lastRow+1 + `="usd",AI` + lastRow+1 + `*0.001,0.001*AI` + lastRow+1 + `*googlefinance("currency:"&$AH` + lastRow+1 + `&"USD")),""))`},
+            { column: 21, value: salesOwner },
+            { column: 22, value: growthOwner },
+            { column: 24, value: analysisSheetCreatedURL },
+            { column: 25, value: oppIDs },
+            { column: 26, value: analysisSpreadsheetName },
+            { column: 27, value: "Just open" },
+            { column: 29, formula: `=iferror(vlookup(E` + lastRow+1 + `,'[AUX] Opportunities'!$X$2:$Y,2,0),"")`},
+            { column: 30, formula: `=iferror(VLOOKUP(E` + lastRow+1 + `,'[AUX] Closed Deals Data'!$A$2:$C,2,0),"")`},
+            { column: 31, formula: `=iferror(VLOOKUP(Y` + lastRow+1 + `,'[AUX] Lead Gen'!$A$2:$D,3,0),"")`},
+            { column: 32, formula: `=iferror(VLOOKUP(Y` + lastRow+1 + `,'[AUX] Lead Gen'!$A$2:$D,4,0),"")`},
+            { column: 33, formula: `=iferror(VLOOKUP(E` + lastRow+1 + `,'[AUX] Closed Deals Data'!$A$2:$C,3,0),"")`},
+            { column: 38, formula: `=if(AJ` + lastRow+1 + `="","",iferror(if($AH` + lastRow+1 + `="usd",AJ` + lastRow+1 + `,AJ` + lastRow+1 + `*googlefinance("currency:"&$AH` + lastRow+1 + `&"USD")),""))`},
+            { column: 39, formula: `=if(AK` + lastRow+1 + `="","",iferror(if($AH` + lastRow+1 + `="usd",AK` + lastRow+1 + `,AK` + lastRow+1 + `*googlefinance("currency:"&$AH` + lastRow+1 + `&"USD")),""))`},
+            { column: 43, formula:  `=if(AP` + lastRow+1 + `="","",iferror(if($AH` + lastRow+1 + `="usd",AP` + lastRow+1 + `,AP` + lastRow+1 + `*googlefinance("currency:"&$AH` + lastRow+1 + `&"USD")),""))`},
+            { column: 44, formula:  `=if(L` + lastRow+1 + `="","Pending",AK` + lastRow+1 + `/L` + lastRow+1 + `)`},
+            { column: 46, formula:  `=if(G` + lastRow+1 + `="Pending","Pending",if(AO` + lastRow+1 + `="","Pending",G` + lastRow+1 + `/AO` + lastRow+1 + `))`},
+            { column: 51, formula:  `=if(AX` + lastRow+1 + `="","",if(G` + lastRow+1 + `="Pending","Pending",AX` + lastRow+1 + `/G` + lastRow+1 + `))`},
+            { column: 52, formula:  `=if(Z` + lastRow+1 + `="","",iferror(divide(indirect("'"&$Z` + lastRow+1 + `&"'!E10"),AP` + lastRow+1 + `),""))`},
+            { column: 54, formula:  `=if(G` + lastRow+1 + `="Pending","Pending",if(BA` + lastRow+1 + `="","",iferror(divide(G` + lastRow+1 + `,BA` + lastRow+1 + `),"")))`},
+        ];
+
+        // Write the data to the sheet
+        dataFillTrackerAnalysisDoc.forEach(({column, value, formula }) => {
+            if (formula) {
+                docTracker.getRange(lastRow + 1, column).setFormula(formula);
+            } else {
+                docTracker.getRange(lastRow + 1, column).setValue(value);
+            }
+        });
+
+        colorCountryTab(analysisSheetCreated,country);
+        docTracker.getRange(1, 1, Alast + 1, lastcolumn).setBorder(true, true, true, true, true, true, '#000000', SpreadsheetApp.BorderStyle.SOLID);
+    }
+}
+
+function toFlatArray(arr) {
+    let flatArray = [].concat.apply([], arr);
+    return flatArray
+}
+
+function colorCountryTab(tab,country) {
+    /*
+    Esta función necesita como inputs la tab y el país, y directamente colorea la tab
+    */
+    const countryColors = {
+    Argentina: "#00FF00",//Argentina: Green
+    Australia: "#0000FF",//Australia: Blue
+    Austria: "#FFFF00",//Austria: Yellow
+    Belgium: "#FF00FF",//Belgium: Fuchsia
+    Brazil: "#00FFFF",//Brazil: Aqua
+    Canada: "#FF0000",//Canada: Red
+    Chile: "#800000",//Chile: Maroon
+    "Costa Rica": "#008000",//Costa Rica: Olive
+    Denmark: "#000080",//Denmark: Navy
+    France: "#808000",//France: Olive
+    Germany: "#800080",//Germany: Purple
+    Ireland: "#008080",//Ireland: Teal
+    Italy: "#808080",//Italy: Gray
+    Japan: "#C0C0C0",//Japan: Silver
+    "Korea (Republic of)": "#FFC0CB",//Korea (Republic of): Pink
+    Mexico: "#FFA07A",//Mexico: Light Salmon
+    Morocco: "#FFD700",//Morocco: Gold
+    Netherlands: "#DAA520",//Netherlands: Goldenrod
+    "New Zealand": "#ADD8E6",//New Zealand: Light Blue
+    Portugal: "#98FB98",//Portugal: Pale Green
+    "Russian Federation": "#F0E68C",//Russian Federation: Khaki
+    Singapore: "#E6E6FA",//Singapore: Lavender
+    "South Africa": "#D3D3D3",//South Africa: Light Gray
+    Spain: "#A52A2A",//Spain: Brown
+    Sweden: "#FF69B4",//Sweden: Hot Pink
+    Switzerland: "#FF1493",//Switzerland: Deep Pink
+    "United Arab Emirates": "#DB7093",//United Arab Emirates: Pale Violet Red
+    "United Kingdom": "#B0C4DE",//United Kingdom: Light Steel Blue
+    "United States": "#87CEEB"//United States: Sky Blue
+    };
+    tab.setTabColor(countryColors[country] || "#000000");
+  }
+
+  function checkInputs(){
+    
+  }
